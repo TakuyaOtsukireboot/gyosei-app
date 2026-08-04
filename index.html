@@ -3,128 +3,245 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>行政書士 肢別1問1答</title>
+  <title>行政書士 肢別1問1答（高機能版）</title>
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="bg-gray-100 min-h-screen flex flex-col items-center justify-center p-4">
+<body class="bg-gray-100 min-h-screen flex flex-col items-center justify-center p-3 sm:p-4">
 
-  <div class="bg-white rounded-2xl shadow-xl w-full max-w-md p-6 flex flex-col min-h-[520px] justify-between">
+  <div class="bg-white rounded-2xl shadow-xl w-full max-w-md p-5 flex flex-col min-h-[580px] justify-between">
     
     <div>
-      <div class="flex justify-between items-center text-sm font-bold text-gray-500 mb-2">
-        <span id="category-badge" class="bg-blue-100 text-blue-800 px-3 py-1 rounded-full">読み込み中...</span>
+      <div class="bg-gray-50 rounded-xl p-3 mb-4 text-xs font-bold text-gray-600 flex justify-between items-center border border-gray-100">
+        <div>回答: <span id="stat-total" class="text-gray-900 font-extrabold text-sm">0</span>問</div>
+        <div>正解率: <span id="stat-rate" class="text-blue-600 font-extrabold text-sm">0%</span></div>
+        <div>復習対象: <span id="stat-wrong" class="text-red-500 font-extrabold text-sm">0</span>問</div>
+      </div>
+
+      <div class="grid grid-cols-2 gap-2 mb-3">
+        <select id="filter-category" onchange="initQuiz()" class="bg-gray-100 border border-gray-300 text-gray-800 text-xs rounded-lg p-2 font-bold focus:ring-2 focus:ring-blue-500 focus:outline-none">
+          <option value="ALL">全科目</option>
+          <option value="行政法">行政法</option>
+          <option value="民法">民法</option>
+          <option value="憲法">憲法</option>
+          <option value="商法">商法・会社法</option>
+          <option value="基礎法学">基礎法学</option>
+          <option value="基礎知識">基礎知識</option>
+        </select>
+
+        <select id="filter-mode" onchange="initQuiz()" class="bg-gray-100 border border-gray-300 text-gray-800 text-xs rounded-lg p-2 font-bold focus:ring-2 focus:ring-blue-500 focus:outline-none">
+          <option value="NORMAL">通常出題</option>
+          <option value="WRONG_ONLY">🔥 間違えた問題のみ</option>
+          <option value="RANDOM">🔀 ランダム出題</option>
+        </select>
+      </div>
+
+      <div class="flex justify-between items-center text-xs font-bold text-gray-500 mb-1">
+        <span id="category-badge" class="bg-blue-100 text-blue-800 px-2.5 py-0.5 rounded-full">読み込み中...</span>
         <span id="progress">0 / 0</span>
       </div>
-      <div class="w-full bg-gray-200 rounded-full h-2 mb-6">
-        <div id="progress-bar" class="bg-blue-600 h-2 rounded-full w-0 transition-all duration-300"></div>
+      <div class="w-full bg-gray-200 rounded-full h-1.5 mb-4">
+        <div id="progress-bar" class="bg-blue-600 h-1.5 rounded-full w-0 transition-all duration-300"></div>
       </div>
     </div>
 
-    <div id="loading" class="text-center py-10 text-gray-500 font-bold">問題データを取得しています...</div>
-    <div id="quiz-box" class="hidden my-auto">
-      <p id="question-text" class="text-lg font-medium text-gray-800 leading-relaxed"></p>
+    <div id="loading" class="text-center py-10 text-gray-500 font-bold text-sm">問題データを取得中...</div>
+    
+    <div id="quiz-box" class="hidden my-auto py-2">
+      <p id="question-text" class="text-base sm:text-lg font-medium text-gray-800 leading-relaxed"></p>
     </div>
 
-    <div id="action-area" class="mt-6">
-      <div id="answer-buttons" class="grid grid-cols-2 gap-4">
-        <button onclick="checkAnswer(true)" class="bg-red-500 hover:bg-red-600 active:scale-95 text-white text-4xl font-bold py-6 rounded-2xl shadow-lg transition">〇</button>
-        <button onclick="checkAnswer(false)" class="bg-blue-500 hover:bg-blue-600 active:scale-95 text-white text-4xl font-bold py-6 rounded-2xl shadow-lg transition">✕</button>
+    <div id="action-area" class="mt-4">
+      <div id="answer-buttons" class="grid grid-cols-2 gap-3">
+        <button onclick="checkAnswer(true)" class="bg-red-500 hover:bg-red-600 active:scale-95 text-white text-3xl font-bold py-5 rounded-2xl shadow-md transition">〇</button>
+        <button onclick="checkAnswer(false)" class="bg-blue-500 hover:bg-blue-600 active:scale-95 text-white text-3xl font-bold py-5 rounded-2xl shadow-md transition">✕</button>
       </div>
 
-      <div id="explanation-box" class="hidden mt-4 p-4 rounded-xl text-left border-2">
-        <div id="result-status" class="text-2xl font-extrabold mb-2"></div>
-        <p id="explanation-text" class="text-sm text-gray-700 mb-2 leading-relaxed"></p>
-        <p id="law-ref" class="text-xs text-gray-500 font-mono"></p>
-        <button onclick="nextQuestion()" class="mt-4 w-full bg-gray-800 text-white font-bold py-3 rounded-xl shadow hover:bg-gray-900 transition">次の問題へ ➔</button>
+      <div id="explanation-box" class="hidden p-4 rounded-xl text-left border-2">
+        <div id="result-status" class="text-xl font-extrabold mb-1"></div>
+        <p id="explanation-text" class="text-xs sm:text-sm text-gray-700 mb-2 leading-relaxed"></p>
+        <p id="law-ref" class="text-xs text-gray-500 font-mono font-semibold"></p>
+        <button onclick="nextQuestion()" class="mt-3 w-full bg-gray-800 text-white font-bold py-3 text-sm rounded-xl shadow hover:bg-gray-900 transition">次へ ➔</button>
       </div>
+    </div>
+
+    <div class="mt-4 text-center border-t pt-2">
+      <button onclick="resetHistory()" class="text-[10px] text-gray-400 hover:text-red-500 underline">学習記録・間違えた問題をクリア</button>
     </div>
 
   </div>
 
   <script>
-    // 設定されたGASのAPI URL
     const API_URL = "https://script.google.com/macros/s/AKfycbw5XAldos2D8lMOzoPqqHW8mUy92vlkB7o-ASf9f26uI2zE8oRha9UsiTat2ssHpdtusw/exec";
 
-    let questions = [];
+    let allQuestions = [];     // 全データ
+    let currentPlaylist = [];  // 現在の条件でフィルタリングされたデータ
     let currentIndex = 0;
 
-    // APIから問題データを取得
+    // ローカルストレージ用のキー
+    const STORAGE_KEY_WRONG = "gyosei_quiz_wrong_ids";
+    const STORAGE_KEY_STATS = "gyosei_quiz_stats";
+
+    // ローカルストレージヘルパー
+    function getWrongIds() {
+      return JSON.parse(localStorage.getItem(STORAGE_KEY_WRONG) || "[]");
+    }
+    function saveWrongIds(ids) {
+      localStorage.setItem(STORAGE_KEY_WRONG, JSON.stringify(ids));
+    }
+    function getStats() {
+      return JSON.parse(localStorage.getItem(STORAGE_KEY_STATS) || '{"total":0, "correct":0}');
+    }
+    function saveStats(stats) {
+      localStorage.setItem(STORAGE_KEY_STATS, JSON.stringify(stats));
+    }
+
+    // 初回APIデータ取得
     async function loadQuestions() {
       try {
         const response = await fetch(API_URL);
-        questions = await response.json();
+        const data = await response.json();
         
-        // 空データや不正なデータをフィルタリング
-        questions = questions.filter(q => q.question && q.question.trim() !== "");
+        // 有効な問題のみ抽出
+        allQuestions = data.filter(q => q.question && q.question.trim() !== "");
 
-        if(questions.length === 0) {
+        if(allQuestions.length === 0) {
           document.getElementById('loading').innerText = "問題データが見つかりませんでした。";
           return;
         }
 
         document.getElementById('loading').classList.add('hidden');
         document.getElementById('quiz-box').classList.remove('hidden');
-        showQuestion();
+
+        updateStatsDisplay();
+        initQuiz();
       } catch (error) {
         console.error(error);
         document.getElementById('loading').innerText = "データの読み込みに失敗しました。";
       }
     }
 
-    // 問題を表示
+    // 問題リストの作成・初期化（フィルター変更時にも呼ばれる）
+    function initQuiz() {
+      const category = document.getElementById('filter-category').value;
+      const mode = document.getElementById('filter-mode').value;
+      const wrongIds = getWrongIds();
+
+      // 1. 科目フィルター
+      let list = allQuestions.filter(q => {
+        if (category === "ALL") return true;
+        return q.category === category;
+      });
+
+      // 2. モードフィルター
+      if (mode === "WRONG_ONLY") {
+        list = list.filter(q => wrongIds.includes(String(q.id)));
+      } else if (mode === "RANDOM") {
+        list = [...list].sort(() => Math.random() - 0.5);
+      }
+
+      currentPlaylist = list;
+      currentIndex = 0;
+
+      if (currentPlaylist.length === 0) {
+        document.getElementById('quiz-box').innerHTML = `
+          <div class="text-center py-6 text-gray-500">
+            <p class="font-bold mb-1">条件に合う問題がありません</p>
+            <p class="text-xs">（間違い問題がないか、科目データがありません）</p>
+          </div>
+        `;
+        document.getElementById('answer-buttons').classList.add('hidden');
+        document.getElementById('explanation-box').classList.add('hidden');
+        document.getElementById('progress').innerText = `0 / 0`;
+        document.getElementById('progress-bar').style.width = `0%`;
+        return;
+      }
+
+      // 画面の復元（終了画面からの復帰用）
+      document.getElementById('quiz-box').innerHTML = `<p id="question-text" class="text-base sm:text-lg font-medium text-gray-800 leading-relaxed"></p>`;
+      showQuestion();
+    }
+
+    // 問題の表示
     function showQuestion() {
-      const q = questions[currentIndex];
+      const q = currentPlaylist[currentIndex];
       const subCat = q.subCategory ? `（${q.subCategory}）` : '';
       document.getElementById('category-badge').innerText = `${q.category || '全般'}${subCat}`;
-      document.getElementById('progress').innerText = `${currentIndex + 1} / ${questions.length}`;
-      document.getElementById('progress-bar').style.width = `${((currentIndex + 1) / questions.length) * 100}%`;
+      document.getElementById('progress').innerText = `${currentIndex + 1} / ${currentPlaylist.length}`;
+      document.getElementById('progress-bar').style.width = `${((currentIndex + 1) / currentPlaylist.length) * 100}%`;
       document.getElementById('question-text').innerText = q.question;
 
-      // 解説ボックスを隠して回答ボタンを表示
       document.getElementById('answer-buttons').classList.remove('hidden');
       document.getElementById('explanation-box').classList.add('hidden');
     }
 
-    // 〇✕判定
+    // 回答判定
     function checkAnswer(userChoice) {
-      const q = questions[currentIndex];
-      // スプレッドシートからの文字列/論理値（TRUE/FALSE）の揺れに対応
+      const q = currentPlaylist[currentIndex];
       const isCorrectAnswer = (q.answer === true || q.answer === "TRUE" || q.answer === "true");
       const isCorrect = (userChoice === isCorrectAnswer);
 
+      // 成績の記録
+      const stats = getStats();
+      stats.total += 1;
+      if (isCorrect) stats.correct += 1;
+      saveStats(stats);
+
+      // 不正解リストの更新
+      let wrongIds = getWrongIds();
+      const qId = String(q.id);
+      if (!isCorrect) {
+        if (!wrongIds.includes(qId)) wrongIds.push(qId);
+      } else {
+        // 正解した場合は復習リストから削除（復習達成）
+        wrongIds = wrongIds.filter(id => id !== qId);
+      }
+      saveWrongIds(wrongIds);
+
+      updateStatsDisplay();
+
+      // UI表示
       const expBox = document.getElementById('explanation-box');
       const resStatus = document.getElementById('result-status');
 
       if (isCorrect) {
         resStatus.innerText = "⭕ 正解！";
-        resStatus.className = "text-2xl font-extrabold mb-2 text-red-500";
-        expBox.className = "mt-4 p-4 rounded-xl text-left border-2 border-red-200 bg-red-50";
+        resStatus.className = "text-xl font-extrabold mb-1 text-red-500";
+        expBox.className = "mt-3 p-3.5 rounded-xl text-left border-2 border-red-200 bg-red-50";
       } else {
         resStatus.innerText = "❌ 不正解...";
-        resStatus.className = "text-2xl font-extrabold mb-2 text-blue-500";
-        expBox.className = "mt-4 p-4 rounded-xl text-left border-2 border-blue-200 bg-blue-50";
+        resStatus.className = "text-xl font-extrabold mb-1 text-blue-500";
+        expBox.className = "mt-3 p-3.5 rounded-xl text-left border-2 border-blue-200 bg-blue-50";
       }
 
       document.getElementById('explanation-text').innerText = q.explanation || '解説はありません。';
       document.getElementById('law-ref').innerText = q.lawRef ? `【根拠】${q.lawRef}` : '';
 
-      // ボタンを隠して解説を表示
       document.getElementById('answer-buttons').classList.add('hidden');
       expBox.classList.remove('hidden');
+    }
+
+    // 成績表示の更新
+    function updateStatsDisplay() {
+      const stats = getStats();
+      const wrongIds = getWrongIds();
+      const rate = stats.total > 0 ? Math.round((stats.correct / stats.total) * 100) : 0;
+
+      document.getElementById('stat-total').innerText = stats.total;
+      document.getElementById('stat-rate').innerText = `${rate}%`;
+      document.getElementById('stat-wrong').innerText = wrongIds.length;
     }
 
     // 次の問題へ
     function nextQuestion() {
       currentIndex++;
-      if (currentIndex < questions.length) {
+      if (currentIndex < currentPlaylist.length) {
         showQuestion();
       } else {
-        // 全問終了時
         document.getElementById('quiz-box').innerHTML = `
-          <div class="text-center py-8">
-            <h2 class="text-2xl font-bold mb-2">🎉 全問終了！</h2>
-            <p class="text-gray-600 mb-6 text-sm">お疲れ様でした！スプレッドシートに問題を追加・修正すると自動でアプリに反映されます。</p>
-            <button onclick="location.reload()" class="bg-blue-600 text-white font-bold px-6 py-3 rounded-xl shadow hover:bg-blue-700 transition">もう一度解く</button>
+          <div class="text-center py-6">
+            <h2 class="text-xl font-bold mb-2">🎉 セット完了！</h2>
+            <p class="text-gray-600 mb-4 text-xs">選択した条件の問題をすべて解き終わりました。</p>
+            <button onclick="initQuiz()" class="bg-blue-600 text-white font-bold text-sm px-5 py-2.5 rounded-xl shadow hover:bg-blue-700 transition">もう一度解く</button>
           </div>
         `;
         document.getElementById('answer-buttons').classList.add('hidden');
@@ -132,7 +249,17 @@
       }
     }
 
-    // 起動時にデータを読み込み
+    // 記録クリア
+    function resetHistory() {
+      if (confirm("学習回答数・正解率・間違えた問題の記録をすべてクリアしますか？")) {
+        localStorage.removeItem(STORAGE_KEY_WRONG);
+        localStorage.removeItem(STORAGE_KEY_STATS);
+        updateStatsDisplay();
+        initQuiz();
+      }
+    }
+
+    // 起動
     loadQuestions();
   </script>
 </body>
