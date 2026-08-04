@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>行政書士 肢別1問1答</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 min-h-screen flex flex-col items-center justify-center p-4">
+
+  <div class="bg-white rounded-2xl shadow-xl w-full max-w-md p-6 flex flex-col min-h-[520px] justify-between">
+    
+    <div>
+      <div class="flex justify-between items-center text-sm font-bold text-gray-500 mb-2">
+        <span id="category-badge" class="bg-blue-100 text-blue-800 px-3 py-1 rounded-full">読み込み中...</span>
+        <span id="progress">0 / 0</span>
+      </div>
+      <div class="w-full bg-gray-200 rounded-full h-2 mb-6">
+        <div id="progress-bar" class="bg-blue-600 h-2 rounded-full w-0 transition-all duration-300"></div>
+      </div>
+    </div>
+
+    <div id="loading" class="text-center py-10 text-gray-500 font-bold">問題データを取得しています...</div>
+    <div id="quiz-box" class="hidden my-auto">
+      <p id="question-text" class="text-lg font-medium text-gray-800 leading-relaxed"></p>
+    </div>
+
+    <div id="action-area" class="mt-6">
+      <div id="answer-buttons" class="grid grid-cols-2 gap-4">
+        <button onclick="checkAnswer(true)" class="bg-red-500 hover:bg-red-600 active:scale-95 text-white text-4xl font-bold py-6 rounded-2xl shadow-lg transition">〇</button>
+        <button onclick="checkAnswer(false)" class="bg-blue-500 hover:bg-blue-600 active:scale-95 text-white text-4xl font-bold py-6 rounded-2xl shadow-lg transition">✕</button>
+      </div>
+
+      <div id="explanation-box" class="hidden mt-4 p-4 rounded-xl text-left border-2">
+        <div id="result-status" class="text-2xl font-extrabold mb-2"></div>
+        <p id="explanation-text" class="text-sm text-gray-700 mb-2 leading-relaxed"></p>
+        <p id="law-ref" class="text-xs text-gray-500 font-mono"></p>
+        <button onclick="nextQuestion()" class="mt-4 w-full bg-gray-800 text-white font-bold py-3 rounded-xl shadow hover:bg-gray-900 transition">次の問題へ ➔</button>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    // 設定されたGASのAPI URL
+    const API_URL = "https://script.google.com/macros/s/AKfycbw5XAldos2D8lMOzoPqqHW8mUy92vlkB7o-ASf9f26uI2zE8oRha9UsiTat2ssHpdtusw/exec";
+
+    let questions = [];
+    let currentIndex = 0;
+
+    // APIから問題データを取得
+    async function loadQuestions() {
+      try {
+        const response = await fetch(API_URL);
+        questions = await response.json();
+        
+        // 空データや不正なデータをフィルタリング
+        questions = questions.filter(q => q.question && q.question.trim() !== "");
+
+        if(questions.length === 0) {
+          document.getElementById('loading').innerText = "問題データが見つかりませんでした。";
+          return;
+        }
+
+        document.getElementById('loading').classList.add('hidden');
+        document.getElementById('quiz-box').classList.remove('hidden');
+        showQuestion();
+      } catch (error) {
+        console.error(error);
+        document.getElementById('loading').innerText = "データの読み込みに失敗しました。";
+      }
+    }
+
+    // 問題を表示
+    function showQuestion() {
+      const q = questions[currentIndex];
+      const subCat = q.subCategory ? `（${q.subCategory}）` : '';
+      document.getElementById('category-badge').innerText = `${q.category || '全般'}${subCat}`;
+      document.getElementById('progress').innerText = `${currentIndex + 1} / ${questions.length}`;
+      document.getElementById('progress-bar').style.width = `${((currentIndex + 1) / questions.length) * 100}%`;
+      document.getElementById('question-text').innerText = q.question;
+
+      // 解説ボックスを隠して回答ボタンを表示
+      document.getElementById('answer-buttons').classList.remove('hidden');
+      document.getElementById('explanation-box').classList.add('hidden');
+    }
+
+    // 〇✕判定
+    function checkAnswer(userChoice) {
+      const q = questions[currentIndex];
+      // スプレッドシートからの文字列/論理値（TRUE/FALSE）の揺れに対応
+      const isCorrectAnswer = (q.answer === true || q.answer === "TRUE" || q.answer === "true");
+      const isCorrect = (userChoice === isCorrectAnswer);
+
+      const expBox = document.getElementById('explanation-box');
+      const resStatus = document.getElementById('result-status');
+
+      if (isCorrect) {
+        resStatus.innerText = "⭕ 正解！";
+        resStatus.className = "text-2xl font-extrabold mb-2 text-red-500";
+        expBox.className = "mt-4 p-4 rounded-xl text-left border-2 border-red-200 bg-red-50";
+      } else {
+        resStatus.innerText = "❌ 不正解...";
+        resStatus.className = "text-2xl font-extrabold mb-2 text-blue-500";
+        expBox.className = "mt-4 p-4 rounded-xl text-left border-2 border-blue-200 bg-blue-50";
+      }
+
+      document.getElementById('explanation-text').innerText = q.explanation || '解説はありません。';
+      document.getElementById('law-ref').innerText = q.lawRef ? `【根拠】${q.lawRef}` : '';
+
+      // ボタンを隠して解説を表示
+      document.getElementById('answer-buttons').classList.add('hidden');
+      expBox.classList.remove('hidden');
+    }
+
+    // 次の問題へ
+    function nextQuestion() {
+      currentIndex++;
+      if (currentIndex < questions.length) {
+        showQuestion();
+      } else {
+        // 全問終了時
+        document.getElementById('quiz-box').innerHTML = `
+          <div class="text-center py-8">
+            <h2 class="text-2xl font-bold mb-2">🎉 全問終了！</h2>
+            <p class="text-gray-600 mb-6 text-sm">お疲れ様でした！スプレッドシートに問題を追加・修正すると自動でアプリに反映されます。</p>
+            <button onclick="location.reload()" class="bg-blue-600 text-white font-bold px-6 py-3 rounded-xl shadow hover:bg-blue-700 transition">もう一度解く</button>
+          </div>
+        `;
+        document.getElementById('answer-buttons').classList.add('hidden');
+        document.getElementById('explanation-box').classList.add('hidden');
+      }
+    }
+
+    // 起動時にデータを読み込み
+    loadQuestions();
+  </script>
+</body>
+</html>
